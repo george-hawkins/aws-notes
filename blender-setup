@@ -1,0 +1,13 @@
+#!/bin/bash -e
+
+sudo yum -y install libGL
+sudo yum -y install libXrender
+sudo yum -y install libXi
+
+version=3.1.2
+url=$(curl -s -D- -L https://www.blender.org/download/release/Blender${version%.*}/blender-$version-linux-x64.tar.xz -o /dev/null | sed -n 's/^refresh:.*url=\(.*\.xz\).*/\1/p')
+curl -sL $url -o blender.tar.xz
+mkdir blender
+time tar -xf blender.tar.xz --strip-components=1 -C blender
+
+echo 'Ready.'

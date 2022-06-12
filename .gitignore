@@ -1,0 +1,5 @@
+.*.sw*
+.idea/
+*.blend*
+junk/
+aws-key-pair.pem

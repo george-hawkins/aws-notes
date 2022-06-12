@@ -1,0 +1,76 @@
+#!/bin/bash -e
+
+SECURITY_GROUP='sg-0fe3a198a2fcc9e9b'
+
+IAM_PROFILE='RenderJobWorkerProfile5'
+
+# TODO: eventually I want a setup where the SECURITY_GROUP doesn't allow incoming connections. When this is the case, I presume I don't need a KEY_PAIR.
+KEY_PAIR='AwsKeyPair'
+
+function fail {
+    message=$1
+    echo $message 1>&2
+    exit 1
+}
+
+if [ $# -ne 1 ]
+then
+    fail "Usage: $0 instance-type"
+fi
+
+instance_type=$1
+
+if [ $instance_type == 't2.micro' ]
+then
+    owner='amazon'
+    name_pattern='amzn2-ami-kernel-*-hvm-*-x86_64-gp2'
+elif [ $instance_type == 'g4dn.xlarge' ]
+then
+    owner='aws-marketplace'
+    name_pattern='amzn2-ami-graphics-hvm-*'
+else
+    fail "Unknown instance type $instance_type"
+fi
+
+
+# Get the latest image details.
+declare -A image_description
+while IFS='=' read -r key value
+do
+    image_description[$key]="$value"
+done < <(aws ec2 describe-images --owners $owner --filters "Name=name,Values=$name_pattern" --query 'sort_by(Images, &CreationDate)[-1].{name: Name,imageId: ImageId,description: Description}' | jq -r 'to_entries|map("\(.key)=\(.value|tostring)")|.[]')
+
+echo "Using ${image_description[description]} (${image_description[name]})"
+imageId=${image_description[imageId]}
+
+uuid=$(uuidgen)
+
+instance_name="instance-$uuid"
+
+# You can use `--query` instead of `jq` but `jq` gives more control over e.g. excluding quotes around strings etc.
+instance_id=$(aws ec2 run-instances \
+    --image-id $imageId \
+    --instance-type $instance_type \
+    --count 1 \
+    --key-name $KEY_PAIR \
+    --security-group-ids $SECURITY_GROUP \
+    --instance-initiated-shutdown-behavior terminate \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
+    --iam-instance-profile "Name=$IAM_PROFILE" \
+    | jq -r '.Instances[].InstanceId')
+
+while true
+do
+    ip=$(aws ec2 describe-instances --instance-ids $instance_id | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
+    if [ $ip != "null" ]
+    then
+        echo "export INSTANCE_IP=$ip"
+        # I think AWS use a fairly limited set of IPs (on Google Cloud I've seen the same IP more than once).
+        # So perhaps one should also always discard any possible old entry in `known_hosts`:
+        # ssh-keygen -R $INSTANCE_IP
+        echo 'ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP'
+        echo "For Ubuntu servers, the user name is 'ubuntu' rather than 'ec2-user'."
+        break
+    fi
+    echo '.'
+done
