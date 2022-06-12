@@ -2,7 +2,8 @@
 
 SECURITY_GROUP='sg-0fe3a198a2fcc9e9b'
 
-IAM_PROFILE='RenderJobWorkerProfile5'
+IAM_PROFILE='RenderJobWorkerProfile'
+USER_DATA='user_data'
 
 # TODO: eventually I want a setup where the SECURITY_GROUP doesn't allow incoming connections. When this is the case, I presume I don't need a KEY_PAIR.
 KEY_PAIR='AwsKeyPair'
@@ -51,18 +52,23 @@ instance_name="instance-$uuid"
 instance_id=$(aws ec2 run-instances \
     --image-id $imageId \
     --instance-type $instance_type \
-    --count 1 \
+    --count 4 \
     --key-name $KEY_PAIR \
     --security-group-ids $SECURITY_GROUP \
     --instance-initiated-shutdown-behavior terminate \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
     --iam-instance-profile "Name=$IAM_PROFILE" \
+    --user-data "file://$USER_DATA" \
+    --instance-market-options 'MarketType=spot' \
     | jq -r '.Instances[].InstanceId')
+
+
 
 while true
 do
+    # The output here looks odd if you launch multiple instances (as you get a list of IPs).
     ip=$(aws ec2 describe-instances --instance-ids $instance_id | jq -r '.Reservations[].Instances[].NetworkInterfaces[].Association.PublicIp')
-    if [ $ip != "null" ]
+    if [ "$ip" != "null" ]
     then
         echo "export INSTANCE_IP=$ip"
         # I think AWS use a fairly limited set of IPs (on Google Cloud I've seen the same IP more than once).
