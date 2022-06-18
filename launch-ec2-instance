@@ -3,9 +3,8 @@
 SECURITY_GROUP='sg-0fe3a198a2fcc9e9b'
 
 IAM_PROFILE='RenderJobWorkerProfile'
-USER_DATA='user_data'
 
-# TODO: eventually I want a setup where the SECURITY_GROUP doesn't allow incoming connections. When this is the case, I presume I don't need a KEY_PAIR.
+# If you don't need to access the box then you can do without specifying a key-pair.
 KEY_PAIR='AwsKeyPair'
 
 function fail {
@@ -58,11 +57,10 @@ instance_id=$(aws ec2 run-instances \
     --instance-initiated-shutdown-behavior terminate \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
     --iam-instance-profile "Name=$IAM_PROFILE" \
-    --user-data "file://$USER_DATA" \
     --instance-market-options 'MarketType=spot' \
     | jq -r '.Instances[].InstanceId')
 
-
+# For user-data just add `--user-data "file://$USER_DATA"` where $USER_DATA points to a file in the current directory. 
 
 while true
 do
