@@ -9,6 +9,8 @@ See also:
 * [`google-cloud.md`](google-cloud.md)
 * [`blender-aws-and-docker.md`](blender-aws-and-docker.md)
 
+And [`more-aws-notes.md`](more-aws-notes.md) for notes on slightly more advanced stuff like metadata, user-data, roles, logging and spot pricing.
+
 Some of the following is digested from the AWS CLI [user guide](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html). I already had an AWS root account (that I'd never used) so, I signed in using it.
 
 Choosing a region
@@ -449,6 +451,8 @@ The security group was created in response to these choice:
 By default, all outbound traffic is allowed - I looked, and it turns out that restricting it to e.g. just S3 isn't trivial.
 
 Ideally, you want to get to a point where your setup where no inbound rule is needed at all.
+
+**Update:** for more on security groups, see my notes [here](https://github.com/george-hawkins/boto3-renderer/blob/master/docs/create-security-group.md).
 
 Other cloud platforms
 ---------------------
