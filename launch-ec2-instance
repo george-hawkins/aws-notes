@@ -1,8 +1,9 @@
 #!/bin/bash -e
 
-SECURITY_GROUP='sg-0fe3a198a2fcc9e9b'
+# Number of EC2 instances to launch.
+COUNT=1
 
-IAM_PROFILE='RenderJobWorkerProfile'
+SECURITY_GROUP='BasicSecurityGroup'
 
 # If you don't need to access the box then you can do without specifying a key-pair.
 KEY_PAIR='AwsKeyPair'
@@ -51,16 +52,22 @@ instance_name="instance-$uuid"
 instance_id=$(aws ec2 run-instances \
     --image-id $imageId \
     --instance-type $instance_type \
-    --count 4 \
+    --count $COUNT \
     --key-name $KEY_PAIR \
     --security-group-ids $SECURITY_GROUP \
     --instance-initiated-shutdown-behavior terminate \
     --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$instance_name}]" \
-    --iam-instance-profile "Name=$IAM_PROFILE" \
     --instance-market-options 'MarketType=spot' \
     | jq -r '.Instances[].InstanceId')
 
+# For am IAM profile just add `--iam-instance-profile "Name=$IAM_PROFILE"` where $IAM_PROFILE is the name of the desired profile.
 # For user-data just add `--user-data "file://$USER_DATA"` where $USER_DATA points to a file in the current directory. 
+
+# Any non-zero exit from `run-instances` gets lost due to using `$( ... )`.
+if [ "$instance_id" == "" ]
+then
+    exit 1
+fi
 
 while true
 do

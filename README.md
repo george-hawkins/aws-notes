@@ -441,16 +441,74 @@ AWS CLI - launching instances
 
 See the script [`launch-ec2-instance`](launch-ec2-instance) for how to launch instances using the AWS CLI.
 
-To launch an instance, you need a security group - later, I created one via the CLI but initially, I went to the EC2 dashboard  and then to _Security Groups_ and selected one that had been automatically created when I used the web console to start an AMI of the type that I now wanted to start via the command line.
+To launch an instance, you need a security group. Initially, I went to the EC2 dashboard and then to _Security Groups_ and used the name of one there (that had been automatically created when I used the web console to start an instance). But it's also fairly simple to create one using the AWS CLI.
 
-The security group was created in response to these choice:
+### Security group creation with the AWS CLI
 
-* That I didn't want to allow inbound HTTP traffic.
-* And that I only wanted to allow inbound traffic from my IPv4 address at the time (note my IP address seems to be fairly stable but could change with time).
+Find your default VPC:
 
-By default, all outbound traffic is allowed - I looked, and it turns out that restricting it to e.g. just S3 isn't trivial.
+```
+$ aws ec2 describe-vpcs --filters 'Name=is-default,Values=true' --query 'Vpcs[0].VpcId' --output text
+vpc-08d25d0400f9bc892
+```
 
-Ideally, you want to get to a point where your setup where no inbound rule is needed at all.
+Create a security group called "BasicSecurityGroup" that allows all outgoing traffic but no incoming traffic:
+
+```
+$ name=BasicSecurityGroup
+$ now=$(date --iso-8601=seconds --utc)
+$ aws ec2 create-security-group --group-name $name --description "$name created $now"
+{
+    "GroupId": "sg-06a5c9c9e2df4106b"
+}
+```
+
+Determine your IP address and add a rule to allow incoming ssh traffic from that address:
+
+```
+$ my_ip=$(curl -s https://checkip.amazonaws.com)
+$ aws ec2 authorize-security-group-ingress --group-name $name --protocol tcp --port 22 --cidr $my_ip/32
+{
+    "Return": true,
+    "SecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-0bc85e5c80040446c",
+            "GroupId": "sg-06a5c9c9e2df4106b",
+            "GroupOwnerId": "585598036396",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIpv4": "31.10.159.229/32"
+        }
+    ]
+}
+```
+
+If your ISP changes your IP address at some point in the future, the simplest thing is to just delete the group (and then recreate it as above):
+
+```
+$ aws ec2 delete-security-group --group-name $name
+```
+
+### Launching an instance
+
+To launch a `t2.micro` instance:
+
+```
+$ ./launch-ec2-instance t2.micro
+Using Amazon Linux 2 Kernel 5.10 AMI 2.0.20220606.1 x86_64 HVM gp2 (amzn2-ami-kernel-5.10-hvm-2.0.20220606.1-x86_64-gp2)
+export INSTANCE_IP=3.67.97.161
+ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP
+For Ubuntu servers, the user name is 'ubuntu' rather than 'ec2-user'.
+```
+
+Its output tells you what image it used and how you can connect, so just copy those steps:
+
+```
+$ export INSTANCE_IP=3.67.97.161
+$ ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP
+```
 
 **Update:** for more on security groups, see my notes [here](https://github.com/george-hawkins/boto3-renderer/blob/master/docs/create-security-group.md).
 
