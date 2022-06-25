@@ -439,8 +439,6 @@ So, you could perhaps use c5.2xlarge instances instead of GPU instances but at a
 AWS CLI - launching instances
 -----------------------------
 
-See the script [`launch-ec2-instance`](launch-ec2-instance) for how to launch instances using the AWS CLI.
-
 To launch an instance, you need a security group. Initially, I went to the EC2 dashboard and then to _Security Groups_ and used the name of one there (that had been automatically created when I used the web console to start an instance). But it's also fairly simple to create one using the AWS CLI.
 
 ### Security group creation with the AWS CLI
@@ -493,12 +491,14 @@ $ aws ec2 delete-security-group --group-name $name
 
 ### Launching an instance
 
+See the script [`launch-ec2-instance`](launch-ec2-instance) for how to launch instances using the AWS CLI. To use it, make sure the `SECURITY_GROUP` and `KEY_PAIR` values in the script reference an existing security group and key pair.
+
 To launch a `t2.micro` instance:
 
 ```
 $ ./launch-ec2-instance t2.micro
 Using Amazon Linux 2 Kernel 5.10 AMI 2.0.20220606.1 x86_64 HVM gp2 (amzn2-ami-kernel-5.10-hvm-2.0.20220606.1-x86_64-gp2)
-export INSTANCE_IP=3.67.97.161
+INSTANCE_IP=3.67.97.161
 ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP
 For Ubuntu servers, the user name is 'ubuntu' rather than 'ec2-user'.
 ```
@@ -506,7 +506,7 @@ For Ubuntu servers, the user name is 'ubuntu' rather than 'ec2-user'.
 Its output tells you what image it used and how you can connect, so just copy those steps:
 
 ```
-$ export INSTANCE_IP=3.67.97.161
+$ INSTANCE_IP=3.67.97.161
 $ ssh -oStrictHostKeyChecking=accept-new -i aws-key-pair.pem ec2-user@$INSTANCE_IP
 ```
 

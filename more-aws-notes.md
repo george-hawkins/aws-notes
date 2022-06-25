@@ -1,5 +1,5 @@
-AWS notes
-=========
+More AWS notes
+==============
 
 This page contains more miscellaneous notes made after I'd become somewhat familiar with AWS.
 
