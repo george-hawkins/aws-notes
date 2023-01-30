@@ -22,7 +22,7 @@ Oddly, Eevee can't run without a display (but Cycles can). You can set up a virt
 X forwarding requires `xauth` (see the answers to this Unix & Linux SE [question](https://unix.stackexchange.com/q/12755/111626)). However, even with X-forwarding Eevee failed like this:
 
 ```
-$ $ ./blender/blender -b input.blend -E BLENDER_EEVEE -o //result/ -f 1
+$ ./blender/blender -b input.blend -E BLENDER_EEVEE -o //result/ -f 1
 Blender 3.1.2 (hash cc66d1020c3b built 2022-03-31 23:36:08)
 /run/user/1000/gvfs/ non-existent directory
 Read blend: /home/ec2-user/input.blend
